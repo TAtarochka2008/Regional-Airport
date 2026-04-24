@@ -1,0 +1,170 @@
+﻿{% extends 'airport_app/base.html' %}
+
+{% block title %}Мои заявки - Региональный аэропорт{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Мои заявки пассажира</h1>
+    <a href="{% url 'doctor_list' %}" class="btn btn-primary">
+        <i class="fas fa-calendar-plus me-2"></i>Новая заявка
+    </a>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0"><i class="fas fa-calendar-check me-2"></i>Ближайшие заявки</h5>
+    </div>
+    <div class="card-body">
+        {% if upcoming_appointments %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Дата и время</th>
+                            <th>Сотрудник</th>
+                            <th>Служба</th>
+                            <th>Стойка / зона</th>
+                            <th>Статус</th>
+                            <th>Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for appointment in upcoming_appointments %}
+                        <tr>
+                            <td>
+                                <strong>{{ appointment.appointment_date|date:"d.m.Y" }}</strong><br>
+                                <small class="text-muted">{{ appointment.appointment_time|time:"H:i" }}</small>
+                            </td>
+                            <td>{{ appointment.doctor.user.get_full_name }}</td>
+                            <td>
+                                <span class="badge bg-secondary">
+                                    {{ appointment.doctor.get_specialization_display }}
+                                </span>
+                            </td>
+                            <td>{{ appointment.office_number }}</td>
+                            <td>
+                                {% if appointment.status == 'запланирован' %}
+                                    <span class="badge bg-primary">Запланирован</span>
+                                {% elif appointment.status == 'завершен' %}
+                                    <span class="badge bg-success">Завершен</span>
+                                {% elif appointment.status == 'отменен' %}
+                                    <span class="badge bg-danger">Отменен</span>
+                                {% else %}
+                                    <span class="badge bg-warning">{{ appointment.status }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if appointment.status == 'запланирован' %}
+                                    <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" 
+                                            data-bs-target="#cancelModal{{ appointment.id }}">
+                                        Отменить
+                                    </button>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>
+                У вас нет запланированных заявок.
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="fas fa-history me-2"></i>История заявок</h5>
+    </div>
+    <div class="card-body">
+        {% if past_appointments %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Дата и время</th>
+                            <th>Сотрудник</th>
+                            <th>Служба</th>
+                            <th>Стойка / зона</th>
+                            <th>Статус</th>
+                            <th>Причина</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for appointment in past_appointments %}
+                        <tr>
+                            <td>
+                                {{ appointment.appointment_date|date:"d.m.Y" }}<br>
+                                <small>{{ appointment.appointment_time|time:"H:i" }}</small>
+                            </td>
+                            <td>{{ appointment.doctor.user.get_full_name }}</td>
+                            <td>{{ appointment.doctor.get_specialization_display }}</td>
+                            <td>{{ appointment.office_number }}</td>
+                            <td>
+                                {% if appointment.status == 'завершен' %}
+                                    <span class="badge bg-success">Завершен</span>
+                                {% elif appointment.status == 'отменен' %}
+                                    <span class="badge bg-danger">Отменен</span>
+                                {% elif appointment.status == 'пассажир не явился' %}
+                                    <span class="badge bg-warning">Не явился</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if appointment.reason %}
+                                    <small>{{ appointment.reason|truncatechars:50 }}</small>
+                                {% else %}
+                                    <small class="text-muted">Не указан</small>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>
+                У вас нет завершенных или отмененных заявок.
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Модальные окна для отмены заявок -->
+{% for appointment in upcoming_appointments %}
+{% if appointment.status == 'запланирован' %}
+<div class="modal fade" id="cancelModal{{ appointment.id }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Отмена заявки</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Вы уверены, что хотите отменить заявку?</p>
+                <p><strong>{{ appointment.doctor.user.get_full_name }}</strong><br>
+                {{ appointment.appointment_date|date:"d.m.Y" }} в {{ appointment.appointment_time|time:"H:i" }}</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Нет, оставить</button>
+                <form method="post" action="{% url 'cancel_appointment' appointment.id %}" style="display: inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">Да, отменить</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endfor %}
+
+<style>
+    .table th {
+        background-color: #f8f9fa;
+        font-weight: 600;
+    }
+</style>
+{% endblock %}

@@ -1,0 +1,132 @@
+﻿{% extends 'airport_app/base.html' %}
+
+{% block title %}Заявка пассажира - Региональный аэропорт{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0"><i class="fas fa-calendar-plus me-2"></i>Заявка пассажира</h4>
+            </div>
+            <div class="card-body">
+                <div class="mb-4">
+                    <h5>Сотрудник: {{ doctor.user.get_full_name }}</h5>
+                    <p class="text-muted">{{ doctor.get_specialization_display }} | Стойка / зона: {{ doctor.office_number }}</p>
+                </div>
+                
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <!-- Скрытое поле для сотрудника -->
+                    <input type="hidden" name="doctor" value="{{ doctor.id }}">
+
+                    <!-- Поля формы с помощью Django -->
+                    {% for field in form %}
+                        <div class="mb-3">
+                            <label for="{{ field.id_for_label }}" class="form-label">
+                                {{ field.label }}
+                                {% if field.field.required %}<span class="text-danger">*</span>{% endif %}
+                            </label>
+
+                            {% if field.name == 'appointment_date' %}
+                                <input type="date"
+                                       name="{{ field.name }}"
+                                       id="{{ field.id_for_label }}"
+                                       class="form-control"
+                                       value="{{ field.value|default_if_none:'' }}"
+                                       {% if field.field.required %}required{% endif %}>
+                            {% elif field.name == 'appointment_time' %}
+                                <input type="time"
+                                       name="{{ field.name }}"
+                                       id="{{ field.id_for_label }}"
+                                       class="form-control"
+                                       value="{{ field.value|default_if_none:'' }}"
+                                       step="900"
+                                       {% if field.field.required %}required{% endif %}>
+                            {% elif field.name == 'reason' %}
+                                <textarea name="{{ field.name }}"
+                                          id="{{ field.id_for_label }}"
+                                          class="form-control"
+                                          rows="3">{{ field.value|default_if_none:'' }}</textarea>
+                            {% else %}
+                                {{ field }}
+                            {% endif %}
+
+                            {% if field.help_text %}
+                                <div class="form-text">{{ field.help_text }}</div>
+                            {% endif %}
+
+                            {% if field.errors %}
+                                <div class="text-danger">
+                                    {% for error in field.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Пожалуйста, проверьте данные рейса и контакты. После подтверждения заявка будет создана.
+                    </div>
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{% url 'doctor_schedule' doctor.id %}" class="btn btn-outline-secondary me-md-2">
+                            <i class="fas fa-times me-2"></i>Отмена
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-check me-2"></i>Подтвердить заявку
+                        </button>
+                    </div>
+                </form>
+
+                <hr class="my-4">
+
+                <div class="card bg-light">
+                    <div class="card-body">
+                        <h6 class="card-title">Доступные даты для заявки:</h6>
+                        <div class="row">
+                            {% for available_date in available_dates %}
+                                <div class="col-4 col-md-3 mb-2">
+                                    <button type="button" class="btn btn-outline-primary btn-sm w-100 date-btn"
+                                            data-date="{{ available_date|date:'Y-m-d' }}">
+                                        {{ available_date|date:"d.m" }}
+                                    </button>
+                                </div>
+                            {% empty %}
+                                <div class="col-12">
+                                    <p class="text-muted">Нет доступных дат для заявки.</p>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Автозаполнение даты при клике на кнопку
+    document.querySelectorAll('.date-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const date = this.getAttribute('data-date');
+            const dateField = document.getElementById('{{ form.appointment_date.id_for_label }}');
+            if (dateField) {
+                dateField.value = date;
+            }
+        });
+    });
+
+    // Настройка минимальной даты для выбора
+    const today = new Date().toISOString().split('T')[0];
+    const dateField = document.getElementById('{{ form.appointment_date.id_for_label }}');
+    if (dateField) {
+        dateField.min = today;
+    }
+});
+</script>
+{% endblock %}

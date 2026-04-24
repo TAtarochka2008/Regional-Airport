@@ -1,0 +1,130 @@
+﻿{% extends 'airport_app/base.html' %}
+
+{% block title %}Панель администратора - Региональный аэропорт{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">Панель администратора</h1>
+
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-white bg-primary">
+            <div class="card-body">
+                <h5 class="card-title">Сотрудники</h5>
+                <h2 class="display-4">{{ doctors_count }}</h2>
+                <a href="{% url 'manage_doctors' %}" class="text-white">Управление →</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-success">
+            <div class="card-body">
+                <h5 class="card-title">Пассажиры</h5>
+                <h2 class="display-4">{{ patients_count }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-warning">
+            <div class="card-body">
+                <h5 class="card-title">Заявки сегодня</h5>
+                <h2 class="display-4">{{ today_appointments }}</h2>
+                <a href="{% url 'manage_appointments' %}" class="text-white">Все заявки →</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-info">
+            <div class="card-body">
+                <h5 class="card-title">Смены</h5>
+                <h2 class="display-4">{{ schedules_count }}</h2>
+                <a href="{% url 'manage_schedules' %}" class="text-white">Управление →</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Последние заявки</h5>
+            </div>
+            <div class="card-body">
+                {% if recent_appointments %}
+                    <div class="list-group">
+                        {% for appointment in recent_appointments %}
+                        <div class="list-group-item">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">{{ appointment.patient.user.get_full_name }}</h6>
+                                <small>{{ appointment.created_at|date:"d.m.Y H:i" }}</small>
+                            </div>
+                            <p class="mb-1">
+                                Служба: {{ appointment.doctor.get_specialization_display }}
+                            </p>
+                            <small>
+                                {{ appointment.appointment_date|date:"d.m.Y" }} в 
+                                {{ appointment.appointment_time|time:"H:i" }} | 
+                                <span class="badge bg-secondary">{{ appointment.status }}</span>
+                            </small>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-muted">Нет заявок</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Сотрудники без смены на завтра</h5>
+            </div>
+            <div class="card-body">
+                {% if doctors_without_schedule %}
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Следующие сотрудники не имеют смены на завтра:
+                    </div>
+                    <ul class="list-group">
+                        {% for doctor in doctors_without_schedule %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            {{ doctor.user.get_full_name }}
+                            <span class="badge bg-secondary">{{ doctor.get_specialization_display }}</span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <div class="alert alert-success">
+                        <i class="fas fa-check-circle me-2"></i>
+                        У всех сотрудников есть смены на завтра!
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="mb-0">Быстрые действия</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{% url 'manage_schedules' %}" class="btn btn-outline-primary">
+                        <i class="fas fa-calendar-alt me-2"></i>Управление сменами
+                    </a>
+                    <a href="{% url 'manage_doctors' %}" class="btn btn-outline-primary">
+                        <i class="fas fa-headset me-2"></i>Управление сотрудниками
+                    </a>
+                    <a href="{% url 'manage_appointments' %}" class="btn btn-outline-primary">
+                        <i class="fas fa-calendar-check me-2"></i>Управление заявками
+                    </a>
+                    <a href="/admin/" class="btn btn-outline-secondary">
+                        <i class="fas fa-cog me-2"></i>Админ-панель Django
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,87 @@
+﻿{% extends 'airport_app/base.html' %}
+
+{% block title %}График службы - Региональный аэропорт{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1>График службы</h1>
+        <h3 class="text-primary">{{ doctor.user.get_full_name }}</h3>
+        <p class="text-muted">{{ doctor.get_specialization_display }}</p>
+    </div>
+    <a href="{% url 'create_appointment' doctor.id %}" class="btn btn-primary">
+        <i class="fas fa-calendar-plus me-2"></i>Оформить заявку
+    </a>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Еженедельный график смен</h5>
+            </div>
+            <div class="card-body">
+                {% if days %}
+                    {% for day_name, day_schedules in days.items %}
+                    <div class="schedule-day mb-4">
+                        <h5 class="text-primary">{{ day_name }}</h5>
+                        {% for schedule in day_schedules %}
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <div>
+                                    <i class="fas fa-clock me-2"></i>
+                                    {{ schedule.start_time|time:"H:i" }} - {{ schedule.end_time|time:"H:i" }}
+                                </div>
+                                <span class="badge bg-secondary">Стойка / зона {{ schedule.office_number }}</span>
+                            </div>
+                        {% endfor %}
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        График для этого сотрудника еще не установлен.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Информация о сотруднике</h5>
+            </div>
+            <div class="card-body">
+                <p><strong>Служба:</strong> {{ doctor.get_specialization_display }}</p>
+                <p><strong>Должность:</strong> {{ doctor.qualification }}</p>
+                <p><strong>Стаж работы:</strong> {{ doctor.experience }} лет</p>
+                <p><strong>Стойка / зона:</strong> {{ doctor.office_number }}</p>
+                <p><strong>Телефон:</strong> {{ doctor.phone_number }}</p>
+                
+                <hr>
+                
+                <h6 class="mb-3">Доступные даты для заявки:</h6>
+                <div class="list-group">
+                    {% for available_date in available_dates %}
+                        <a href="{% url 'create_appointment' doctor.id %}?date={{ available_date|date:'Y-m-d' }}" 
+                           class="list-group-item list-group-item-action">
+                            <i class="fas fa-calendar-day me-2"></i>
+                            {{ available_date|date:"l, d.m.Y" }}
+                        </a>
+                    {% empty %}
+                        <div class="alert alert-warning">
+                            Нет доступных дат для заявки в ближайшую неделю.
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="mt-4">
+    <a href="{% url 'doctor_list' %}" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-left me-2"></i>Назад к службам аэропорта
+    </a>
+</div>
+{% endblock %}

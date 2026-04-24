@@ -1,0 +1,121 @@
+﻿{% extends 'airport_app/base.html' %}
+
+{% block title %}Управление заявками - Региональный аэропорт{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">Управление заявками пассажиров</h1>
+
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">Фильтры</h5>
+    </div>
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label">Статус</label>
+                <select name="status" class="form-select" onchange="this.form.submit()">
+                    <option value="">Все статусы</option>
+                    <option value="запланирован" {% if status_filter == 'запланирован' %}selected{% endif %}>Запланирован</option>
+                    <option value="завершен" {% if status_filter == 'завершен' %}selected{% endif %}>Завершен</option>
+                    <option value="отменен" {% if status_filter == 'отменен' %}selected{% endif %}>Отменен</option>
+                    <option value="пассажир не явился" {% if status_filter == 'пассажир не явился' %}selected{% endif %}>Пассажир не явился</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Служба</label>
+                <select name="doctor" class="form-select" onchange="this.form.submit()">
+                    <option value="">Все службы</option>
+                    {% for doctor in doctors %}
+                        <option value="{{ doctor.id }}" {% if doctor_filter == doctor.id|stringformat:"i" %}selected{% endif %}>
+                            {{ doctor.user.get_full_name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Дата</label>
+                <input type="date" name="date" class="form-control" value="{{ date_filter }}" 
+                       onchange="this.form.submit()">
+            </div>
+            <div class="col-md-3 d-flex align-items-end">
+                <a href="{% url 'manage_appointments' %}" class="btn btn-outline-secondary w-100">
+                    Сбросить фильтры
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Список заявок</h5>
+        <span class="badge bg-primary">{{ appointments.count }} заявок</span>
+    </div>
+    <div class="card-body">
+        {% if appointments %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Дата и время</th>
+                            <th>Пассажир</th>
+                            <th>Служба</th>
+                            <th>Стойка / зона</th>
+                            <th>Статус</th>
+                            <th>Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for appointment in appointments %}
+                        <tr>
+                            <td>
+                                <strong>{{ appointment.appointment_date|date:"d.m.Y" }}</strong><br>
+                                <small>{{ appointment.appointment_time|time:"H:i" }}</small>
+                            </td>
+                            <td>{{ appointment.patient.user.get_full_name }}</td>
+                            <td>
+                                {{ appointment.doctor.user.get_full_name }}<br>
+                                <small class="text-muted">{{ appointment.doctor.get_specialization_display }}</small>
+                            </td>
+                            <td>{{ appointment.office_number }}</td>
+                            <td>
+                                {% if appointment.status == 'запланирован' %}
+                                    <span class="badge bg-primary">Запланирован</span>
+                                {% elif appointment.status == 'завершен' %}
+                                    <span class="badge bg-success">Завершен</span>
+                                {% elif appointment.status == 'отменен' %}
+                                    <span class="badge bg-danger">Отменен</span>
+                                {% elif appointment.status == 'пассажир не явился' %}
+                                    <span class="badge bg-warning">Не явился</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="/admin/airport_app/appointment/{{ appointment.id }}/change/" 
+                                   class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <a href="{% url 'doctor_schedule' appointment.doctor.id %}" 
+                                   class="btn btn-sm btn-outline-info">
+                                    <i class="fas fa-calendar-alt"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>
+                Нет заявок, соответствующих фильтрам.
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="mt-4">
+    <a href="{% url 'admin_panel' %}" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-left me-2"></i>Назад в админ-панель
+    </a>
+</div>
+{% endblock %}
